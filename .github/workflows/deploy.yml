@@ -5,6 +5,10 @@ on:
         branches: ["main"]
     workflow_dispatch:
 
+# --- NEW: Tell GitHub to use the modern Node 24 environment for its Actions ---
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
     contents: read
     pages: write
