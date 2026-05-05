@@ -1,25 +1,22 @@
 name: Deploy Astro App to GitHub Pages
 
 on:
-    # Triggers the workflow on push events to the main branch
     push:
         branches: ["main"]
-    # Allows you to run this workflow manually from the Actions tab
     workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+# --- NEW: Tell GitHub to use the modern Node 24 environment for its Actions ---
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
     contents: read
     pages: write
     id-token: write
 
-# Allow one concurrent deployment
 concurrency:
     group: "pages"
     cancel-in-progress: true
-
-env:
-    BUILD_PATH: "." # Default Astro build path
 
 jobs:
     build:
@@ -28,19 +25,27 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-            - name: Install, build, and setup node
+
+            - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: "20"
-                  cache: "npm"
+                  node-version: "22"
+
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@v1
+              with:
+                  bun-version: latest
+
             - name: Install dependencies
-              run: npm ci
+              run: bun install
+
             - name: Build Astro site
-              run: npm run build
+              run: bun run build
+
             - name: Upload artifact
               uses: actions/upload-pages-artifact@v3
               with:
-                  path: "dist" # Astro's default output folder
+                  path: "dist"
 
     deploy:
         environment:
