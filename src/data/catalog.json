@@ -1,0 +1,42 @@
+{
+    "base": {
+        "target_dimension": 80,
+        "cm_penalty": 100,
+        "base_price": 6000
+    },
+    "materials": {
+        "spunbond_75gsm": 0,
+        "spunbond_100gsm": 2000,
+        "canvas": 4000,
+        "dinier": 3500,
+        "parachute": 2500
+    },
+    "printing": {
+        "screen_color_cost": 500,
+        "screen_edge_surcharge": 500,
+        "digital_base": 2000
+    },
+    "accessories": {
+        "velcro": 500,
+        "zipper": 2000,
+        "drawstring": 2000,
+        "cross_body_strap": 500
+    },
+    "economic": {
+        "linear_min_qty": 100,
+        "linear_max_qty": 1000,
+        "multiplier_at_min": 1.5,
+        "multiplier_at_max": 1.1,
+        "low_qty_penalties": [
+            { "min": 50, "max": 99, "surcharge": 2000 },
+            { "min": 25, "max": 49, "surcharge": 5000 }
+        ],
+        "sample_order": {
+            "threshold": 25,
+            "price": 125000
+        }
+    },
+    "customer": {
+        "subscription_discount": 300
+    }
+}

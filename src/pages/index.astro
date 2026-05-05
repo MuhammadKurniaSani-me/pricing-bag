@@ -1,11 +1,341 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+// Import the separated JSON catalog at build time
+import catalogData from '../data/catalog.json';
+import "../styles/global.css";
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+// Kamus Terjemahan (Translation Map)
+const kamusTerjemahan: Record<string, string> = {
+    // Material
+    'spunbond_75gsm': 'Spunbond 75gsm',
+    'canvas': 'Kanvas',
+    'dinier': 'Dinier',
+    'parachute': 'Parasut',
+    // Aksesoris
+    'velcro': 'Perekat (Velcro)',
+    'zipper': 'Resleting',
+    'drawstring': 'Tali Serut',
+    'cross_body_strap': 'Tali Selempang'
+};
+
+// Helper functions for Astro to format the UI labels dynamically
+const formatLabel = (key: string) => {
+    if (kamusTerjemahan[key]) return kamusTerjemahan[key];
+    return key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
+const formatPriceUI = (price: number) => {
+    if (price === 0) return '';
+    return ` (+Rp ${new Intl.NumberFormat('id-ID').format(price)})`;
+};
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Harga Goodie Bag</title>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- KOLOM KIRI: FORM INPUT -->
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h1 class="text-2xl font-bold text-slate-900 mb-6">📦 Form Order Goodie Bag</h1>
+            
+            <form id="calculatorForm" class="space-y-6">
+                
+                <!-- 1. Dimensi & Kuantitas -->
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">1. Dimensi & Jumlah Pesanan</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Tinggi (cm)</label>
+                            <input type="number" id="dim_t" value="40" class="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Panjang (cm)</label>
+                            <input type="number" id="dim_p" value="30" class="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Lebar (cm)</label>
+                            <input type="number" id="dim_l" value="10" class="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1 text-blue-600">Jumlah (pcs)</label>
+                            <input type="number" id="qty" value="100" class="w-full border-blue-300 rounded-md shadow-sm p-2 border bg-blue-50 font-bold text-blue-900 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Material & Sablon -->
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">2. Spesifikasi Bahan & Cetak</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Material Utama</label>
+                            <select id="material" class="w-full border-slate-300 rounded-md p-2 border focus:ring-blue-500 focus:border-blue-500">
+                                {Object.entries(catalogData.materials).map(([key, price]) => (
+                                    <option value={key}>{formatLabel(key)}{formatPriceUI(price)}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Jenis Cetak</label>
+                            <select id="print_type" class="w-full border-slate-300 rounded-md p-2 border focus:ring-blue-500 focus:border-blue-500">
+                                <option value="none">Polos (Tanpa Cetak)</option>
+                                <option value="screen" selected>Sablon Manual</option>
+                                <option value="digital">Cetak Digital (+Rp 2.000)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Detail Sablon (Hidden via JS if Digital/None is selected) -->
+                    <div id="screen_print_options" class="mt-4 grid grid-cols-3 gap-4 border-t pt-4 border-slate-200">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Jumlah Sisi</label>
+                            <input type="number" id="print_sides" value="1" min="1" max="2" class="w-full border-slate-300 rounded-md p-2 border focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Jumlah Warna</label>
+                            <input type="number" id="print_colors" value="1" min="1" class="w-full border-slate-300 rounded-md p-2 border focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="flex items-end pb-2">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="edge_to_edge" class="rounded border-slate-300 text-blue-600 shadow-sm w-4 h-4 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-slate-700">Cetak Penuh (Tanpa Tepi)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Aksesoris Tambahan (Generated Dynamically) -->
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">3. Aksesoris Tambahan</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {Object.entries(catalogData.accessories).map(([key, price]) => (
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" value={key} class="accessory-cb rounded text-blue-600 border-slate-300 w-4 h-4 focus:ring-blue-500">
+                                <span class="ml-2 text-sm font-medium text-slate-700">{formatLabel(key)}</span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+
+                <!-- 4. Status Customer -->
+                <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="is_subscriber" class="rounded text-amber-600 border-amber-400 w-5 h-5 focus:ring-amber-500">
+                        <span class="ml-2 text-sm font-bold text-amber-900">Pelanggan VIP (Dapatkan Diskon Langganan)</span>
+                    </label>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- KOLOM KANAN: HASIL & OUTPUT -->
+        <div class="bg-blue-900 text-white rounded-xl shadow-lg p-6 flex flex-col h-full lg:sticky lg:top-8">
+            <h2 class="text-lg font-medium text-blue-200 mb-4">Estimasi Harga</h2>
+            
+            <div class="mb-6">
+                <p class="text-sm text-blue-300 mb-1">Harga Satuan (Final)</p>
+                <div class="text-4xl font-bold tracking-tight" id="ui_unit_price">Rp 0</div>
+                <p class="text-xs text-amber-300 mt-2 font-medium" id="ui_margin_info">Memuat data...</p>
+            </div>
+
+            <div class="mb-6 pb-6 border-b border-blue-800">
+                <p class="text-sm text-blue-300 mb-1">Total Pesanan</p>
+                <div class="text-2xl font-semibold" id="ui_total_price">Rp 0</div>
+            </div>
+
+            <!-- Notes for CS with COPY BUTTON -->
+            <div class="flex-grow flex flex-col">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-sm font-medium text-blue-200">Template Pesan WhatsApp</p>
+                    <!-- Tombol Copy -->
+                    <button id="copyBtn" onclick="copyTemplate()" class="text-xs bg-blue-700 hover:bg-blue-600 px-3 py-1.5 rounded-md text-white font-medium transition-all focus:ring-2 focus:ring-blue-400 focus:outline-none flex items-center gap-1 shadow-sm">
+                        <span>Salin Pesan</span>
+                        <span>📋</span>
+                    </button>
+                </div>
+                <textarea id="cs_notes" readonly class="w-full flex-grow min-h-[250px] bg-blue-950 border border-blue-800 rounded p-3 text-sm text-blue-100 resize-none focus:outline-none focus:border-blue-500 leading-relaxed"></textarea>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- CLIENT-SIDE LOGIC -->
+    <script define:vars={{ catalogData }}>
+        
+        // Formatter for client-side JS
+        const formatRupiah = (number) => {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number);
+        };
+
+        // Fungsi Salin (Copy to Clipboard)
+        window.copyTemplate = () => {
+            const textarea = document.getElementById('cs_notes');
+            const btn = document.getElementById('copyBtn');
+            
+            // Gunakan Clipboard API modern
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(textarea.value).then(() => {
+                    tampilkanSukses(btn);
+                }).catch(err => {
+                    console.error('Gagal menyalin:', err);
+                    fallbackCopy(textarea, btn);
+                });
+            } else {
+                fallbackCopy(textarea, btn);
+            }
+        };
+
+        // Fallback untuk browser lama
+        function fallbackCopy(textarea, btn) {
+            textarea.select();
+            document.execCommand('copy');
+            tampilkanSukses(btn);
+            window.getSelection().removeAllRanges();
+        }
+
+        // Animasi tombol setelah berhasil disalin
+        function tampilkanSukses(btn) {
+            const teksAsli = btn.innerHTML;
+            btn.innerHTML = `<span>Tersalin!</span> <span>✅</span>`;
+            btn.classList.replace('bg-blue-700', 'bg-green-600');
+            btn.classList.replace('hover:bg-blue-600', 'hover:bg-green-500');
+            
+            setTimeout(() => {
+                btn.innerHTML = teksAsli;
+                btn.classList.replace('bg-green-600', 'bg-blue-700');
+                btn.classList.replace('hover:bg-green-500', 'hover:bg-blue-600');
+            }, 2000);
+        }
+
+        // Toggle Screen Print UI based on selection
+        function togglePrintUI() {
+            const printType = document.getElementById('print_type').value;
+            const screenDiv = document.getElementById('screen_print_options');
+            if (printType === 'screen') {
+                screenDiv.style.display = 'grid';
+            } else {
+                screenDiv.style.display = 'none';
+            }
+        }
+
+        // The Master Math Engine
+        function calculate() {
+            const T = parseInt(document.getElementById('dim_t').value) || 0;
+            const P = parseInt(document.getElementById('dim_p').value) || 0;
+            const L = parseInt(document.getElementById('dim_l').value) || 0;
+            const qty = parseInt(document.getElementById('qty').value) || 1;
+            const material = document.getElementById('material').value;
+            const printType = document.getElementById('print_type').value;
+            const isSub = document.getElementById('is_subscriber').checked;
+
+            // --- 1. NORMAL MANUFACTURING COST ---
+            let manufacturing_cost = 0;
+            const deviation = (T + P + L) - catalogData.base.target_dimension;
+            manufacturing_cost += catalogData.base.base_price + (deviation * catalogData.base.cm_penalty);
+            manufacturing_cost += catalogData.materials[material];
+
+            // Print Logic
+            if (printType === 'screen') {
+                const sides = parseInt(document.getElementById('print_sides').value) || 1;
+                const colors = parseInt(document.getElementById('print_colors').value) || 1;
+                const edge = document.getElementById('edge_to_edge').checked;
+                manufacturing_cost += (sides * colors * catalogData.printing.screen_color_cost);
+                if (edge) manufacturing_cost += catalogData.printing.screen_edge_surcharge;
+            } else if (printType === 'digital') {
+                manufacturing_cost += catalogData.printing.digital_base;
+            }
+
+            // Accessories Logic
+            const accCheckboxes = document.querySelectorAll('.accessory-cb:checked');
+            accCheckboxes.forEach(cb => {
+                manufacturing_cost += catalogData.accessories[cb.value];
+            });
+
+            // --- 2. ECONOMIC MULTIPLIERS & PENALTIES ---
+            let final_unit_price = 0;
+            let final_total = 0;
+            let margin_info_text = "";
+            let cs_template = "";
+
+            // SCENARIO A: Order is below the Minimum Order Quantity (< 25)
+            if (qty < catalogData.economic.sample_order.threshold) {
+                final_unit_price = catalogData.economic.sample_order.price;
+                final_total = final_unit_price; 
+                margin_info_text = "⚠️ Di bawah minimum order. Dialihkan ke harga Sample/Pembuatan Contoh.";
+                
+                cs_template = `Halo Kak! Terima kasih sudah menghubungi kami. 🙏\n\nMohon maaf kak, untuk produksi custom goodie bag, minimum pemesanan kami adalah ${catalogData.economic.sample_order.threshold} pcs.\n\nNamun, jika Kakak ingin melihat hasil jadinya terlebih dahulu, kami bisa buatkan *1 pcs Sample (Contoh Produk)* dengan spesifikasi yang Kakak minta.\n\n*Biaya pembuatan 1 pcs Sample:* ${formatRupiah(final_unit_price)}\n\nApakah Kakak ingin lanjut membuat sample terlebih dahulu, atau ingin menyesuaikan jumlah pesanan menjadi ${catalogData.economic.sample_order.threshold} pcs agar bisa masuk harga produksi? Silakan kabari kami ya Kak! 😊`;
+            } 
+            // SCENARIO B: Normal Production Order (>= 25)
+            else {
+                // Apply Linear Interpolation Multiplier
+                let multiplier = 1.0;
+                const { linear_min_qty, linear_max_qty, multiplier_at_min, multiplier_at_max } = catalogData.economic;
+                
+                let calc_qty = Math.max(linear_min_qty, Math.min(qty, linear_max_qty));
+                multiplier = multiplier_at_min + ((calc_qty - linear_min_qty) * (multiplier_at_max - multiplier_at_min) / (linear_max_qty - linear_min_qty));
+                
+                final_unit_price = manufacturing_cost * multiplier;
+
+                // Apply Low Quantity Surcharges (Penalties for < 100)
+                let penalty_applied = 0;
+                for (const tier of catalogData.economic.low_qty_penalties) {
+                    if (qty >= tier.min && qty <= tier.max) {
+                        final_unit_price += tier.surcharge;
+                        penalty_applied = tier.surcharge;
+                    }
+                }
+
+                // Apply Subscription Discount
+                if (isSub) {
+                    final_unit_price -= catalogData.customer.subscription_discount;
+                }
+
+                final_total = final_unit_price * qty;
+                
+                margin_info_text = `Pengali Harga (Multiplier): ${multiplier.toFixed(2)}x`;
+                if (penalty_applied > 0) margin_info_text += ` | Tambahan Biaya Qty Sedikit: +${formatRupiah(penalty_applied)}`;
+
+                // Generate standard CS Template
+                const materialName = document.getElementById('material').options[document.getElementById('material').selectedIndex].text.split(' (+')[0];
+                cs_template = `Halo Kak! Terima kasih sudah menghubungi kami. 🙏\n\nBerikut estimasi harga untuk pesanan goodie bag Kakak:\n\n*Spesifikasi:*\n- Ukuran: ${T}x${P}x${L} cm\n- Bahan: ${materialName}\n- Jumlah: ${qty} pcs\n\n*Harga:*\n- Harga Satuan: ${formatRupiah(final_unit_price)}\n- Total Pesanan: ${formatRupiah(final_total)}\n\n${isSub ? '*(Harga sudah termasuk diskon khusus Pelanggan VIP)*\n\n' : ''}Apakah Kakak ingin lanjut ke proses desain dan pembayaran? Silakan kabari kami ya Kak! 😊`;
+            }
+
+            // --- 3. UPDATE UI ---
+            document.getElementById('ui_unit_price').innerText = formatRupiah(final_unit_price);
+            
+            if (qty < catalogData.economic.sample_order.threshold) {
+                document.getElementById('ui_total_price').innerText = formatRupiah(final_total) + " (Untuk 1 pcs Sample)";
+            } else {
+                document.getElementById('ui_total_price').innerText = formatRupiah(final_total);
+            }
+            
+            document.getElementById('ui_margin_info').innerText = margin_info_text;
+            document.getElementById('cs_notes').value = cs_template;
+        }
+
+        // Initialize event listeners after the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Attach calculation trigger to all inputs
+            const allInputs = document.querySelectorAll('input, select');
+            allInputs.forEach(input => {
+                input.addEventListener('input', calculate);
+                input.addEventListener('change', calculate);
+            });
+
+            // Special listener for the print type dropdown to show/hide the screen print options
+            const printSelect = document.getElementById('print_type');
+            printSelect.addEventListener('change', togglePrintUI);
+
+            // Run initial state setup
+            togglePrintUI();
+            calculate();
+        });
+
+    </script>
+</body>
+</html>
