@@ -22,17 +22,22 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v4
 
-            # 1. We tell GitHub to install Bun instead of Node
+            # 1. NEW: Tell GitHub to use Node 22 to satisfy Astro's internal requirements
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "22"
+
+            # 2. Setup Bun for lightning-fast package installation
             - name: Setup Bun
               uses: oven-sh/setup-bun@v1
               with:
                   bun-version: latest
 
-            # 2. We use 'bun install' instead of 'npm ci'
+            # 3. Install and Build using Bun
             - name: Install dependencies
               run: bun install
 
-            # 3. We build with Bun
             - name: Build Astro site
               run: bun run build
 
